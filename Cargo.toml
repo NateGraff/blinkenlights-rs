@@ -8,3 +8,5 @@ edition = "2018"
 
 [dependencies]
 gstreamer = "0.14.3"
+gstreamer-app = "0.14.0"
+glib = "0.8.1"
