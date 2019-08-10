@@ -28,8 +28,8 @@ fn main() {
 	//let main_loop = glib::MainLoop::new(None, false);
 	let pipeline = gst::Pipeline::new(None);
 
-	let width: usize = 50;
-	let height: usize = 30;
+	let width: usize = 1080 / 10;
+	let height: usize = 720 / 20;
 
 
 	/*
