@@ -99,6 +99,11 @@ fn main() {
 	let main_loop_clone = main_loop.clone();
 	bus.add_watch(move |_, msg| {
 		match msg.view() {
+			gst::MessageView::Eos(..) => {
+				pipeline.set_state(gst::State::Null)
+					.expect("Unable to stop pipeline");
+				main_loop_clone.quit();
+			},
 			gst::MessageView::Error(err) => {
 				println!(
 					"Error from {:?}: {} ({:?})",
