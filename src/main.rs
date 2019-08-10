@@ -40,8 +40,8 @@ fn main() {
 	let sink = gst::ElementFactory::make("appsink", Some("appsink")).unwrap();
 	let caps = gst::Caps::builder("video/x-raw")
 		.field("format", &"RGB")
-		.field("width", &160i32)
-		.field("height", &100i32)
+		.field("width", &50i32)
+		.field("height", &30i32)
 		.build();
 	sink.set_property("caps", &caps).unwrap();
 
@@ -151,8 +151,11 @@ fn main() {
 	// Convert the mapped buffer to a slice of u8
 	let samples: &[u8] = map.as_slice();
 
-	for pixel in samples.chunks(3) {
-		println!("RGB({}, {}, {})", pixel[0], pixel[1], pixel[2]);
+	for row in samples.chunks(3 * 50) {
+		for pixel in row.chunks(3) {
+			print!("\x1b[38;2;{};{};{}m█\x1b[0m", pixel[0], pixel[1], pixel[2]);
+		}
+		print!("\n");
 	}
 
 	//main_loop.run();
