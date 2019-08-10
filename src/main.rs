@@ -12,6 +12,11 @@ use std::env;
 use std::process::exit;
 
 fn main() {
+
+	/*
+	 * Initialization
+	 */
+
 	// Input video file is the first argument to the program
 	let args: Vec<String> = env::args().collect();
 	if args.len() < 2 {
@@ -24,18 +29,26 @@ fn main() {
 	//let main_loop = glib::MainLoop::new(None, false);
 	let pipeline = gst::Pipeline::new(None);
 
-	let source = gst::ElementFactory::make("filesrc", None).unwrap();
+	/*
+	 * Pipeline Elements
+	 */
+
+	let source = gst::ElementFactory::make("filesrc", Some("src")).unwrap();
 	source.set_property("location", inputfile).unwrap();
-	let decode = gst::ElementFactory::make("decodebin", None).unwrap();
-	let convert = gst::ElementFactory::make("videoconvert", None).unwrap();
-	let scale = gst::ElementFactory::make("videoscale", None).unwrap();
-	let sink = gst::ElementFactory::make("appsink", None).unwrap();
+	let decode = gst::ElementFactory::make("decodebin", Some("decodebin")).unwrap();
+	let convert = gst::ElementFactory::make("videoconvert", Some("vconvert")).unwrap();
+	let scale = gst::ElementFactory::make("videoscale", Some("vscale")).unwrap();
+	let sink = gst::ElementFactory::make("appsink", Some("appsink")).unwrap();
 	let caps = gst::Caps::builder("video/x-raw")
 		.field("format", &"RGB")
 		.field("width", &160i32)
 		.field("height", &100i32)
 		.build();
 	sink.set_property("caps", &caps).unwrap();
+
+	/*
+	 * Build the Pipeline
+	 */
 
 	let elements = &[&source, &decode, &convert, &scale, &sink];
 	pipeline.add_many(elements).unwrap();
@@ -44,12 +57,10 @@ fn main() {
 	gst::Element::link_many(&[&convert, &scale, &sink]).unwrap();
 
 	for e in elements {
-		e.sync_state_with_parent();
+		e.sync_state_with_parent().unwrap();
 	}
 
-	/* convert_sink_pad and pipeline_weak are moved into the following
-	 * closure and cannot be reused */
-	let convert_sink_pad = convert.get_static_pad("sink").unwrap();
+	// pipeline_weak is moved into the following closure and cannot be reused
 	let pipeline_weak = pipeline.downgrade();
 
 	/* Wait until decodebin presents a source pad, and then link it to the
@@ -60,17 +71,26 @@ fn main() {
             None => return,
         };
 
+        let convert = pipeline.get_by_name("vconvert").unwrap();
+        let convert_sink_pad = convert.get_static_pad("sink").unwrap();
+
+        // Only link the pads once
 		if ! ( src_pad.is_linked() || convert_sink_pad.is_linked() ) {
 			src_pad.link(&convert_sink_pad).unwrap();
 
+			// Resync the pipeline elements
 			for e in pipeline.get_children() {
-				e.sync_state_with_parent();
+				e.sync_state_with_parent().unwrap();
 			}
 		}
 	});
 
 	// Set the pipeline state to paused to stay on a single frame
 	pipeline.set_state(gst::State::Paused).expect("Unable to pause pipeline");
+
+	/*
+	 * Error and State Change Message Callbacks
+	 */
 
 	let bus = pipeline.get_bus().expect("Failed to get pipeline bus");
 	//let main_loop_clone = main_loop.clone();
@@ -116,6 +136,10 @@ fn main() {
 
 		gst::Continue(true)
 	});
+
+	/*
+	 * Fetch a framebuffer from the AppSink
+	 */
 
 	let appsink = sink
 		.dynamic_cast::<AppSink>()
