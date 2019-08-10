@@ -5,7 +5,6 @@ extern crate itertools;
 use gst::prelude::*;
 use gst_app::*;
 
-use std::convert::TryInto;
 use std::env;
 use std::process::exit;
 
@@ -94,7 +93,7 @@ fn main() {
 	pipeline.set_state(gst::State::Playing).expect("Unable to Play pipeline");
 
 	/*
-	 * Error and State Change Message Callbacks
+	 * Error Message Callback
 	 */
 
 	let bus = pipeline.get_bus().expect("Failed to get pipeline bus");
@@ -112,30 +111,7 @@ fn main() {
 				pipeline.set_state(gst::State::Null)
 					.expect("Unable to stop pipeline");
 				main_loop_clone.quit();
-			}
-			gst::MessageView::StateChanged(state_changed) => {
-				let current_state = state_changed.get_current();
-				println!(
-					"Pipeline state changed from {:?} to {:?}",
-					state_changed.get_old(),
-					current_state
-				);
-
-				if current_state == gst::State::Paused {
-					let dur: gst::ClockTime = {
-						let mut q = gst::Query::new_duration(gst::Format::Time);
-						if pipeline.query(&mut q) {
-							Some(q.get_result())
-						} else {
-							None
-						}
-					}
-					.and_then(|dur| dur.try_into().ok())
-					.or(Some(gst::ClockTime::from_seconds(0)))
-					.unwrap();
-					println!("Duration {}", dur);
-				}
-			}
+			},
 			_ => (),
 		};
 
