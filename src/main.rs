@@ -89,7 +89,6 @@ fn main() {
 		}
 	});
 
-	// Set the pipeline state to paused to stay on a single frame
 	pipeline.set_state(gst::State::Playing).expect("Unable to Play pipeline");
 
 	/*
@@ -119,7 +118,7 @@ fn main() {
 	});
 
 	/*
-	 * Fetch a framebuffer from the AppSink
+	 * Render samples to the terminal
 	 */
 
 	let appsink = sink
