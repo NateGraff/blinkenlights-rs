@@ -1,11 +1,10 @@
 extern crate gstreamer as gst;
 extern crate gstreamer_app as gst_app;
-extern crate byte_slice_cast;
-
-use byte_slice_cast::*;
 
 use gst::prelude::*;
 use gst_app::*;
+
+use itertools::Itertools;
 
 use std::convert::TryInto;
 use std::env;
@@ -149,11 +148,12 @@ fn main() {
 	let buffer = sample.get_buffer().expect("Failed to get buffer");
 	let map = buffer.map_readable().unwrap();
 
-	// Convert the mapped buffer to a slice of ints
-	let samples = map.as_slice_of::<i16>().unwrap();
+	// Convert the mapped buffer to a slice of u8
+	let samples: &[u8] = map.as_slice();
 
-	// TODO: Do something with the samples
-	println!("First sample: {}", samples[0]);
+	for pixel in samples.chunks(3) {
+		println!("RGB({}, {}, {})", pixel[0], pixel[1], pixel[2]);
+	}
 
 	//main_loop.run();
 }
