@@ -28,6 +28,10 @@ fn main() {
 	//let main_loop = glib::MainLoop::new(None, false);
 	let pipeline = gst::Pipeline::new(None);
 
+	let width: usize = 50;
+	let height: usize = 30;
+
+
 	/*
 	 * Pipeline Elements
 	 */
@@ -40,8 +44,8 @@ fn main() {
 	let sink = gst::ElementFactory::make("appsink", Some("appsink")).unwrap();
 	let caps = gst::Caps::builder("video/x-raw")
 		.field("format", &"RGB")
-		.field("width", &50i32)
-		.field("height", &30i32)
+		.field("width", &(width as i32))
+		.field("height", &(height as i32))
 		.build();
 	sink.set_property("caps", &caps).unwrap();
 
@@ -151,7 +155,7 @@ fn main() {
 	// Convert the mapped buffer to a slice of u8
 	let samples: &[u8] = map.as_slice();
 
-	for row in samples.chunks(3 * 50) {
+	for row in samples.chunks(3 * width) {
 		for pixel in row.chunks(3) {
 			print!("\x1b[38;2;{};{};{}m█\x1b[0m", pixel[0], pixel[1], pixel[2]);
 		}
