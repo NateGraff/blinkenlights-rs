@@ -1,10 +1,9 @@
 extern crate gstreamer as gst;
 extern crate gstreamer_app as gst_app;
+extern crate itertools;
 
 use gst::prelude::*;
 use gst_app::*;
-
-use itertools::Itertools;
 
 use std::convert::TryInto;
 use std::env;
@@ -77,11 +76,14 @@ fn main() {
 		let convert = pipeline.get_by_name("vconvert").unwrap();
 		let convert_sink_pad = convert.get_static_pad("sink").unwrap();
 
-		// Only link the pads once
-		if ! ( src_pad.is_linked() || convert_sink_pad.is_linked() ) {
+		let caps = src_pad.get_current_caps().expect("Failed to get decodebin caps");
+		let structure = caps.get_structure(0).expect("Failed to get structure of decodebin caps");
+
+		// Only link if the pad provides video
+		if structure.get_name().starts_with("video/") {
 			src_pad.link(&convert_sink_pad).unwrap();
 
-			// Resync the pipeline elements
+			// Resync the pipeline elements after linking
 			for e in pipeline.get_children() {
 				e.sync_state_with_parent().unwrap();
 			}
